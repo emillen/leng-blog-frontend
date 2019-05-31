@@ -37,6 +37,20 @@ const actions = {
       .then(response => response.data)
       .then(console.log())
       .catch(console.error),
+  deleteArticle: id => (state, actions) =>
+    axios
+      .delete(`http://localhost:3000/articles/${id}`)
+      .then(response => response.data)
+      .then(console.log)
+      .then(() =>
+        actions.setState({
+          ...state,
+          list: state.list.filter(item => item._id !== id),
+          currentArticle:
+            state.currentArticle._id === id ? {} : state.currentArticle
+        })
+      )
+      .catch(console.error),
   setState: state => state,
   location: location.actions
 };
