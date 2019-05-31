@@ -4,7 +4,8 @@ import "font-awesome/css/font-awesome.min.css";
 
 import axios from "axios";
 import { h, app } from "hyperapp";
-import { location, Route } from "@hyperapp/router";
+import { location, Route, Link } from "@hyperapp/router";
+import marked from "marked";
 
 const state = {
   list: [],
@@ -29,6 +30,10 @@ const actions = {
     axios
       .post("http://localhost:3000/articles", { title, markdown })
       .then(response => response.data)
+      .then(data => {
+        console.log(data);
+        actions.location.go(`/articles/${data._id}`);
+      })
       .then(console.log)
       .catch(console.error),
   updateArticle: id => ({ title, markdown }) =>
@@ -56,27 +61,113 @@ const actions = {
 };
 
 const ArticleList = ({ oncreate, list, onclick }) => (
-  <div oncreate={oncreate} id="article-list">
+  <div oncreate={oncreate} id="article-list" class="list-group">
     {list &&
       list.map(item => (
-        <div onclick={() => onclick(item._id)}>{item.title}</div>
+        <Link
+          to={`/articles/${item._id}`}
+          class="list-group-item list-group-item-action"
+          i
+          onclick={() => onclick(item._id)}
+        >
+          {item.title}
+        </Link>
       ))}
+  </div>
+);
+
+const CreateArticle = ({ onsubmit }) => (
+  <form id="create-article">
+    <div class="form-group">
+      <label for="create-article-title">Title</label>
+      <input
+        type="text"
+        class="form-control"
+        id="create-article-title"
+        placeholder="Title"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="create-article-markdown">Text</label>
+      <textarea class="form-control" id="create-article-markdown" rows="8" />
+    </div>
+    <div class="d-flex justify-content-between">
+      <div />
+      <div
+        onclick={() => {
+          const title = document.querySelector("#create-article-title").value;
+          const markdown = document.querySelector("#create-article-markdown")
+            .value;
+
+          onsubmit({ title, markdown });
+        }}
+        type="submit"
+        class="btn btn-primary"
+      >
+        Submit
+      </div>
+    </div>
+  </form>
+);
+const dangerouslySetInnerHTML = html => element => (element.innerHTML = html);
+const compile = ({ marked, source }) =>
+  dangerouslySetInnerHTML(marked(source, { sanitize: true }));
+const Article = ({ match, title, markdown, marked, oncreate }) => (
+  <div
+    onupdate={() => oncreate(match.params.id)}
+    oncreate={() => oncreate(match.params.id)}
+  >
+    {title && markdown && (
+      <div>
+        <h1>{title}</h1>
+        <div
+          id="mark-down-viewer"
+          onupdate={compile({ source: markdown, marked })}
+          oncreate={compile({ source: markdown, marked })}
+        >
+          {markdown}
+        </div>
+      </div>
+    )}
   </div>
 );
 
 const view = (state, actions) => (
   <div>
     <h1> Hello World</h1>
-    <Route
-      to="/articles"
-      render={() =>
-        ArticleList({
-          oncreate: actions.getArticleList,
-          onclick: actions.getArticle,
-          list: state.list
-        })
-      }
-    />
+    <div class="container">
+      <Route
+        path="/articles/create"
+        render={() => CreateArticle({ onsubmit: actions.createArticle })}
+      />
+      <Route
+        path="/articles/:id"
+        render={({ match }) =>
+          Article({
+            ...state.currentArticle,
+            marked,
+            match,
+            oncreate: id => {
+              console.log(id);
+              actions.getArticle(id);
+            }
+          })
+        }
+      />
+      <Route
+        path="/articles"
+        render={() =>
+          ArticleList({
+            oncreate: actions.getArticleList,
+            onclick: id => {
+              actions.location.go(`/articles/${id}`);
+            },
+            list: state.list
+          })
+        }
+      />
+    </div>
   </div>
 );
 
