@@ -25,6 +25,18 @@ const actions = {
       .then(response => response.data)
       .then(article => actions.setState({ ...state, currentArticle: article }))
       .catch(console.error),
+  createArticle: ({ title, markdown }) =>
+    axios
+      .post("http://localhost:3000/articles", { title, markdown })
+      .then(response => response.data)
+      .then(console.log)
+      .catch(console.error),
+  updateArticle: id => ({ title, markdown }) =>
+    axios
+      .put(`http://localhost:3000/articles/${id}`, { title, markdown })
+      .then(response => response.data)
+      .then(console.log())
+      .catch(console.error),
   setState: state => state,
   location: location.actions
 };
@@ -54,5 +66,5 @@ const view = (state, actions) => (
   </div>
 );
 
-const main = app(state, actions, view, document.querySelector("#app"));
+const main = app(state, actions, view, document.body);
 const unsubscribe = location.subscribe(main.location);
