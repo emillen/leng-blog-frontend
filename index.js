@@ -2,62 +2,16 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.min.js";
 import "font-awesome/css/font-awesome.min.css";
 
-import axios from "axios";
 import { h, app } from "hyperapp";
 import { location, Route, Link } from "@hyperapp/router";
 import marked from "marked";
+
+import actions from "./actions";
 
 const state = {
   list: [],
   currentArticle: {},
   location: location.state
-};
-
-const actions = {
-  getArticleList: () => (state, actions) =>
-    axios
-      .get("http://localhost:3000/articles")
-      .then(response => response.data)
-      .then(list => actions.setState({ ...state, list }))
-      .catch(console.error),
-  getArticle: id => (state, actions) =>
-    axios
-      .get(`http://localhost:3000/articles/${id}`)
-      .then(response => response.data)
-      .then(article => actions.setState({ ...state, currentArticle: article }))
-      .catch(console.error),
-  createArticle: ({ title, markdown }) =>
-    axios
-      .post("http://localhost:3000/articles", { title, markdown })
-      .then(response => response.data)
-      .then(data => {
-        console.log(data);
-        actions.location.go(`/articles/${data._id}`);
-      })
-      .then(console.log)
-      .catch(console.error),
-  updateArticle: id => ({ title, markdown }) =>
-    axios
-      .put(`http://localhost:3000/articles/${id}`, { title, markdown })
-      .then(response => response.data)
-      .then(console.log())
-      .catch(console.error),
-  deleteArticle: id => (state, actions) =>
-    axios
-      .delete(`http://localhost:3000/articles/${id}`)
-      .then(response => response.data)
-      .then(console.log)
-      .then(() =>
-        actions.setState({
-          ...state,
-          list: state.list.filter(item => item._id !== id),
-          currentArticle:
-            state.currentArticle._id === id ? {} : state.currentArticle
-        })
-      )
-      .catch(console.error),
-  setState: state => state,
-  location: location.actions
 };
 
 const ArticleList = ({ oncreate, list, onclick }) => (
@@ -76,7 +30,7 @@ const ArticleList = ({ oncreate, list, onclick }) => (
   </div>
 );
 
-const CreateArticle = ({ onsubmit }) => (
+const CreateArticle = ({ title, markdown, onsubmit }) => (
   <form id="create-article">
     <div class="form-group">
       <label for="create-article-title">Title</label>
@@ -85,22 +39,29 @@ const CreateArticle = ({ onsubmit }) => (
         class="form-control"
         id="create-article-title"
         placeholder="Title"
+        value={title}
       />
     </div>
 
     <div class="form-group">
       <label for="create-article-markdown">Text</label>
-      <textarea class="form-control" id="create-article-markdown" rows="8" />
+      <textarea
+        class="form-control"
+        id="create-article-markdown"
+        rows="8"
+        value={markdown}
+      />
     </div>
     <div class="d-flex justify-content-between">
       <div />
       <div
         onclick={() => {
-          const title = document.querySelector("#create-article-title").value;
-          const markdown = document.querySelector("#create-article-markdown")
+          const newTitle = document.querySelector("#create-article-title")
+            .value;
+          const newMarkdown = document.querySelector("#create-article-markdown")
             .value;
 
-          onsubmit({ title, markdown });
+          onsubmit({ title: newTitle, markdown: newMarkdown });
         }}
         type="submit"
         class="btn btn-primary"
@@ -113,14 +74,32 @@ const CreateArticle = ({ onsubmit }) => (
 const dangerouslySetInnerHTML = html => element => (element.innerHTML = html);
 const compile = ({ marked, source }) =>
   dangerouslySetInnerHTML(marked(source, { sanitize: true }));
-const Article = ({ match, title, markdown, marked, oncreate }) => (
+const Article = ({ match, title, markdown, marked, oncreate, ondelete }) => (
   <div
     onupdate={() => oncreate(match.params.id)}
     oncreate={() => oncreate(match.params.id)}
   >
     {title && markdown && (
       <div>
-        <h1>{title}</h1>
+        <div class="d-flex justify-content-between">
+          <h1>{title}</h1>
+          <div>
+            <button
+              class="btn btn-sm btn-primary"
+              type="submit"
+              onclick={() => ondelete(match.params.id)}
+            >
+              <i class="fa fa-pencil" /> Edit
+            </button>{" "}
+            <button
+              class="btn btn-sm btn-danger"
+              type="submit"
+              onclick={() => ondelete(match.params.id)}
+            >
+              <i class="fa fa-trash" /> Delete
+            </button>{" "}
+          </div>
+        </div>
         <div
           id="mark-down-viewer"
           onupdate={compile({ source: markdown, marked })}
@@ -139,7 +118,24 @@ const view = (state, actions) => (
     <div class="container">
       <Route
         path="/articles/create"
-        render={() => CreateArticle({ onsubmit: actions.createArticle })}
+        render={() =>
+          CreateArticle({
+            onsubmit: actions.createArticle
+          })
+        }
+      />
+      <Route
+        path="/articles/:id/edit"
+        render={({ match }) => {
+          actions.getArticle(match.params.id);
+          return CreateArticle({
+            ...state.currentArticle,
+            onsubmit: ({ title, markdown }) => {
+              console.log(title);
+              actions.updateArticle(match.params.id)({ title, markdown });
+            }
+          });
+        }}
       />
       <Route
         path="/articles/:id"
@@ -151,6 +147,9 @@ const view = (state, actions) => (
             oncreate: id => {
               console.log(id);
               actions.getArticle(id);
+            },
+            ondelete: id => {
+              actions.deleteArticle(id);
             }
           })
         }
