@@ -1,4 +1,4 @@
-const createActions = axios => ({
+const createActions = ({ location, axios }) => ({
   getArticleList: () => (state, actions) =>
     axios
       .get("http://localhost:3000/articles")
@@ -11,21 +11,28 @@ const createActions = axios => ({
       .then(response => response.data)
       .then(article => actions.setState({ ...state, currentArticle: article }))
       .catch(console.error),
-  createArticle: ({ title, markdown }) =>
+  createArticle: ({ title, markdown }) => (state, actions) =>
     axios
       .post("http://localhost:3000/articles", { title, markdown })
       .then(response => response.data)
       .then(data => {
         console.log(data);
+        actions.setState({ ...state, ...data });
         actions.location.go(`/articles/${data._id}`);
       })
       .then(console.log)
       .catch(console.error),
-  updateArticle: id => ({ title, markdown }) => {
+  updateArticle: ({ id, title, markdown }) => (state, actions) => {
     return axios
       .put(`http://localhost:3000/articles/${id}`, { title, markdown })
       .then(response => response.data)
-      .then(console.log())
+      .then(_ => {
+        actions.setState({
+          ...state,
+          currentArticle: { _id: id, title, markdown }
+        });
+        actions.location.go(`/articles/${id}`);
+      })
       .catch(console.error);
   },
   deleteArticle: id => (state, actions) =>
@@ -47,4 +54,4 @@ const createActions = axios => ({
   location: location.actions
 });
 
-export default { createActions };
+export { createActions };

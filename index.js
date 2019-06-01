@@ -2,11 +2,13 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.min.js";
 import "font-awesome/css/font-awesome.min.css";
 
+import axios from "axios";
 import { h, app } from "hyperapp";
 import { location, Route, Link } from "@hyperapp/router";
 import marked from "marked";
 
-import actions from "./actions";
+import { createActions } from "./actions";
+const actions = createActions({ axios, location });
 
 const state = {
   list: [],
@@ -30,8 +32,8 @@ const ArticleList = ({ oncreate, list, onclick }) => (
   </div>
 );
 
-const CreateArticle = ({ title, markdown, onsubmit }) => (
-  <form id="create-article">
+const CreateArticle = ({ oncreate, title, markdown, onsubmit }) => (
+  <form id="create-article" oncreate={() => oncreate()}>
     <div class="form-group">
       <label for="create-article-title">Title</label>
       <input
@@ -55,6 +57,7 @@ const CreateArticle = ({ title, markdown, onsubmit }) => (
     <div class="d-flex justify-content-between">
       <div />
       <div
+        id="create-article-button"
         onclick={() => {
           const newTitle = document.querySelector("#create-article-title")
             .value;
@@ -74,20 +77,26 @@ const CreateArticle = ({ title, markdown, onsubmit }) => (
 const dangerouslySetInnerHTML = html => element => (element.innerHTML = html);
 const compile = ({ marked, source }) =>
   dangerouslySetInnerHTML(marked(source, { sanitize: true }));
-const Article = ({ match, title, markdown, marked, oncreate, ondelete }) => (
-  <div
-    onupdate={() => oncreate(match.params.id)}
-    oncreate={() => oncreate(match.params.id)}
-  >
+const Article = ({
+  match,
+  title,
+  markdown,
+  marked,
+  oncreate,
+  ondelete,
+  onedit
+}) => (
+  <div oncreate={() => oncreate(match.params.id)}>
     {title && markdown && (
       <div>
         <div class="d-flex justify-content-between">
           <h1>{title}</h1>
           <div>
             <button
+              id="edit button"
               class="btn btn-sm btn-primary"
               type="submit"
-              onclick={() => ondelete(match.params.id)}
+              onclick={() => onedit(match.params.id)}
             >
               <i class="fa fa-pencil" /> Edit
             </button>{" "}
@@ -102,7 +111,6 @@ const Article = ({ match, title, markdown, marked, oncreate, ondelete }) => (
         </div>
         <div
           id="mark-down-viewer"
-          onupdate={compile({ source: markdown, marked })}
           oncreate={compile({ source: markdown, marked })}
         >
           {markdown}
@@ -127,12 +135,15 @@ const view = (state, actions) => (
       <Route
         path="/articles/:id/edit"
         render={({ match }) => {
-          actions.getArticle(match.params.id);
           return CreateArticle({
             ...state.currentArticle,
+            oncreate: () => actions.getArticle(match.params.id),
             onsubmit: ({ title, markdown }) => {
-              console.log(title);
-              actions.updateArticle(match.params.id)({ title, markdown });
+              return actions.updateArticle({
+                id: match.params.id,
+                title,
+                markdown
+              });
             }
           });
         }}
@@ -145,15 +156,18 @@ const view = (state, actions) => (
             marked,
             match,
             oncreate: id => {
-              console.log(id);
-              actions.getArticle(id);
+              return actions.getArticle(id);
             },
             ondelete: id => {
-              actions.deleteArticle(id);
+              return actions.deleteArticle(id);
+            },
+            onedit: id => {
+              return actions.location.go(`/articles/${id}/edit`);
             }
           })
         }
       />
+
       <Route
         path="/articles"
         render={() =>
