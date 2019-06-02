@@ -1,6 +1,8 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.min.js";
 import "font-awesome/css/font-awesome.min.css";
+import "highlight.js/styles/atom-one-light.css";
+import "./markdown.css";
 
 import axios from "axios";
 import { h, app } from "hyperapp";
@@ -9,6 +11,21 @@ import marked from "marked";
 
 import { createActions } from "./actions";
 const actions = createActions({ axios, location });
+
+marked.setOptions({
+  renderer: new marked.Renderer(),
+  highlight: function(code) {
+    return require("highlight.js").highlightAuto(code).value;
+  },
+  pedantic: false,
+  gfm: true,
+  tables: true,
+  breaks: false,
+  sanitize: false,
+  smartLists: true,
+  smartypants: false,
+  xhtml: false
+});
 
 const state = {
   list: [],
