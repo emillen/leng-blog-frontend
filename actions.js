@@ -50,6 +50,15 @@ const createActions = ({ location, axios }) => ({
         actions.location.go("/articles");
       })
       .catch(console.error),
+  authenticate: ({ username, password }) => (_, actions) =>
+    axios
+      .post("http://localhost:3000/auth", { username, password })
+      .then(response => response.data.token)
+      .then(token => localStorage.setItem("auth-token", token))
+      .then(console.log)
+      .then(_ => actions.location.go("/articles"))
+      .catch(console.error),
+
   setState: state => state,
   location: location.actions
 });

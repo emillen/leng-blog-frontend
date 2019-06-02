@@ -165,7 +165,6 @@ const Login = ({ onsubmit }) => (
         onclick={() => {
           const password = document.querySelector("#login-password").value;
           const username = document.querySelector("#login-username").value;
-
           onsubmit({ password, username });
         }}
         type="submit"
@@ -191,7 +190,7 @@ const view = (state, actions) => (
         path="/login"
         render={() =>
           Login({
-            onsubmit: asd => console.log(asd)
+            onsubmit: actions.authenticate
           })
         }
       />
