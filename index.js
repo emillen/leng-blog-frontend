@@ -24,7 +24,7 @@ marked.setOptions({
   sanitize: false,
   smartLists: true,
   smartypants: false,
-  xhtml: false
+  xhtml: true
 });
 
 const state = {
@@ -67,7 +67,7 @@ const CreateArticle = ({ oncreate, title, markdown, onsubmit }) => (
       <textarea
         class="form-control"
         id="create-article-markdown"
-        rows="8"
+        rows="12"
         value={markdown}
       />
     </div>
@@ -93,7 +93,7 @@ const CreateArticle = ({ oncreate, title, markdown, onsubmit }) => (
 );
 const dangerouslySetInnerHTML = html => element => (element.innerHTML = html);
 const compile = ({ marked, source }) =>
-  dangerouslySetInnerHTML(marked(source, { sanitize: true }));
+  dangerouslySetInnerHTML(marked(source, { sanitize: false }));
 const Article = ({
   match,
   title,
@@ -137,10 +137,64 @@ const Article = ({
   </div>
 );
 
+const Login = ({ onsubmit }) => (
+  <form id="create-article">
+    <div class="form-group">
+      <label for="login-username">Username</label>
+      <input
+        type="text"
+        class="form-control"
+        id="login-username"
+        placeholder="username"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="login-password">Password</label>
+      <input
+        type="password"
+        class="form-control"
+        id="login-password"
+        placeholder="password"
+      />
+    </div>
+    <div class="d-flex justify-content-between">
+      <div />
+      <div
+        id="login-button"
+        onclick={() => {
+          const password = document.querySelector("#login-password").value;
+          const username = document.querySelector("#login-username").value;
+
+          onsubmit({ password, username });
+        }}
+        type="submit"
+        class="btn btn-primary"
+      >
+        Login
+      </div>
+    </div>
+  </form>
+);
+
 const view = (state, actions) => (
   <div>
-    <h1> Hello World</h1>
+    <header class="m-3 p-2">
+      <h1 style="" onclick={() => actions.location.go("/")}>
+        Emil Lengman <i class="fa fa-user" />
+      </h1>
+      <hr />
+    </header>
+
     <div class="container">
+      <Route
+        path="/login"
+        render={() =>
+          Login({
+            onsubmit: asd => console.log(asd)
+          })
+        }
+      />
       <Route
         path="/articles/create"
         render={() =>
