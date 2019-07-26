@@ -78,6 +78,7 @@ const createActions = ({ location, axios }) => {
         .catch(
           err => console.error(err) && localStorage.setItem("auth-token", null)
         ),
+    isAuthenticated: _ => !!localStorage.getItem("auth-token"),
     setState: state => state,
     location: location.actions
   };

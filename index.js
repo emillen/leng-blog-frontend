@@ -101,30 +101,34 @@ const Article = ({
   marked,
   oncreate,
   ondelete,
-  onedit
+  onedit,
+  isAuthenticated
 }) => (
   <div oncreate={() => oncreate(match.params.id)}>
     {title && markdown && (
       <div>
         <div class="d-flex justify-content-between">
           <h1>{title}</h1>
-          <div>
-            <button
-              id="edit button"
-              class="btn btn-sm btn-primary"
-              type="submit"
-              onclick={() => onedit(match.params.id)}
-            >
-              <i class="fa fa-pencil" /> Edit
-            </button>{" "}
-            <button
-              class="btn btn-sm btn-danger"
-              type="submit"
-              onclick={() => ondelete(match.params.id)}
-            >
-              <i class="fa fa-trash" /> Delete
-            </button>{" "}
-          </div>
+
+          {isAuthenticated && (
+            <div>
+              <button
+                id="edit button"
+                class="btn btn-sm btn-primary"
+                type="submit"
+                onclick={() => onedit(match.params.id)}
+              >
+                <i class="fa fa-pencil" /> Edit
+              </button>{" "}
+              <button
+                class="btn btn-sm btn-danger"
+                type="submit"
+                onclick={() => ondelete(match.params.id)}
+              >
+                <i class="fa fa-trash" /> Delete
+              </button>{" "}
+            </div>
+          )}
         </div>
         <div
           id="mark-down-viewer"
@@ -196,15 +200,17 @@ const view = (state, actions) => (
       />
       <Route
         path="/articles/create"
-        render={() =>
-          CreateArticle({
+        render={() => {
+          if (!actions.isAuthenticated()) return <div />;
+          return CreateArticle({
             onsubmit: actions.createArticle
-          })
-        }
+          });
+        }}
       />
       <Route
         path="/articles/:id/edit"
         render={({ match }) => {
+          if (!actions.isAuthenticated()) return <div />;
           return CreateArticle({
             ...state.currentArticle,
             oncreate: () => actions.getArticle(match.params.id),
@@ -225,6 +231,7 @@ const view = (state, actions) => (
             ...state.currentArticle,
             marked,
             match,
+            isAuthenticated: actions.isAuthenticated(),
             oncreate: id => {
               return actions.getArticle(id);
             },
