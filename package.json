@@ -16,7 +16,7 @@
     "font-awesome": "^4.7.0",
     "highlight.js": "^9.15.8",
     "hyperapp": "^1.2.9",
-    "jquery": "^3.4.1",
+    "jquery": "^3.5.0",
     "marked": "^0.7.0",
     "popper.js": "^1.15.0"
   },
