@@ -21,6 +21,6 @@
     "popper.js": "^1.15.0"
   },
   "devDependencies": {
-    "parcel": "^1.12.3"
+    "parcel": "^2.8.2"
   }
 }
